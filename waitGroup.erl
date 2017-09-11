@@ -2,7 +2,7 @@
 %%% @version 20170830 first release
 %%% @doc
 %%%     A waitGroup waits for a collection of processes to finish.
-%%%     Just like WaitGroup in Golang's sync.
+%%%     Just like sync/WaitGroup in Golang.
 %%% 
 %%%     Tips: fun new/1 And (fun wait/1 or fun wait/2)
 %%%           MUST be called in one process.
@@ -41,20 +41,35 @@ done({Pid, _Ref}) ->
 wait(WaitGroup) ->
     wait(WaitGroup, infinity).
 -spec wait(waitGroup(), expire_milliseconds()) -> any().
-wait({Pid, Ref}, ExpireMilliSeconds) ->
+wait({Pid, _Ref} = WaitGroup, ExpireMilliSeconds) ->
     case ExpireMilliSeconds =:= infinity orelse (is_integer(ExpireMilliSeconds) andalso ExpireMilliSeconds >= 0) of
         true -> ok;
         false -> erlang:error(badarg, [waitGroup, ExpireMilliSeconds])
+    end,
+    case erlang:erase(WaitGroup) of
+        true -> ok;
+        undefined -> erlang:error('waitGroup new/1 And wait/2 MUST be called in one process')
     end,
     case is_process_alive(Pid) of
         true -> Expire = ExpireMilliSeconds;
         false -> Expire = 0
     end,
+    TimeoutLimit = 49 * 24 * 60 * 60 * 1000,
+    case Expire =/= infinity andalso Expire > TimeoutLimit of
+        true -> ExpireList = [Expire rem TimeoutLimit | lists:duplicate(Expire div TimeoutLimit, TimeoutLimit)];
+        false -> ExpireList = [Expire]
+    end,
+    loopWait(WaitGroup, ExpireList).
+-spec loopWait(waitGroup(), [expire_milliseconds()]) -> any().
+loopWait({Pid, Ref} = WaitGroup, ExpireList) ->
     receive
         {'DOWN', Ref, process, Pid, _Info} ->
             ok
-    after Expire ->
-        ok
+    after hd(ExpireList) ->
+        case tl(ExpireList) of
+            [] -> ok;
+            LeftExpireList -> loopWait(WaitGroup, LeftExpireList)
+        end
     end.
 
 %% @hidden waitGroup
