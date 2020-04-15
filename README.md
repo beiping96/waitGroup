@@ -4,7 +4,7 @@ A waitGroup waits for a collection of processes to finish. The main process call
 Just like `sync.WaitGroup` in Golang.
 # Usage
 ``` erlang
-someF() ->
+foo() ->
     % Create a waitGroup, set the number of processes to wait for.
     WaitGroup = waitGroup:new(3),
 
@@ -20,5 +20,5 @@ someF() ->
     % OR fun wait/2 has the timeout (Milliseconds).
     waitGroup:wait(WaitGroup, 1000),
 
-    allWorkDone.
+    allWorkersDone.
 ```
