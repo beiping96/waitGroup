@@ -1,7 +1,7 @@
 # waitGroup
 A waitGroup waits for a collection of processes to finish. The main process calls `fun new/1` to set the number of processes to wait for. Then each of the processes runs and calls `fun done/1` when finished. At the same time, `fun wait/1` or `fun wait/2` can be used to block until all processes have finished.
 
-Just like `sync/WaitGroup` in Golang.
+Just like `sync.WaitGroup` in Golang.
 # Usage
 ``` erlang
 someF() ->
